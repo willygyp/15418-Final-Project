@@ -18,9 +18,10 @@ o - represented by -1 in our array
 
 In board files, the format is:
 - first line is the size
+- second line is the who's turn
 - followed by a space-separated grid of the board
 E.g.
-3
+3 x
 . x o
 x o .
 o o x
@@ -31,6 +32,7 @@ public:
   // initialize an empty board
   Board(int board_size=19) {
     size = board_size;
+    turn = 1;
     int total = size * size;
     board = new char[total];
     memset(board, 0, total);
@@ -45,13 +47,16 @@ public:
     }
 
     string line;
-    getline(board_file, line);
-    if (line.size() != 1) {
-      cout << "File format wrong, must lead with number: " << filename << endl;
-      return;
-    }
 
+    // get board size
+    getline(board_file, line);
     size = stoi(line);
+
+    // get who's turn
+    getline(board_file, line);
+    if (line[0] == 'x') turn = 1;
+    else                turn = -1;
+
     int total = size * size;
     board = new char[total];
     int i = 0;
@@ -83,11 +88,16 @@ public:
   }
 
   // make move n on board[r,c]
-  int make_move(int r, int c, int n) {
-    if (r < 0 || r >= size || c < 0 || c >= size || n < -1 || n > 1) {
+  // TODO: maybe make this virtual
+  int make_move(int r, int c) {
+    if (r < 0 || r >= size || c < 0 || c >= size) {
       return -1;
     }
-    board[r * size + c] = n;
+    if (board[r * size + c] != 0) {
+      return -1;
+    }
+    board[r * size + c] = turn;
+    turn *= -1;
     return 0;
   }
 
@@ -100,6 +110,9 @@ public:
     }
 
     board_file << size << "\n";
+    if (turn == 1) board_file << "x\n";
+    else           board_file << "o\n";
+
     for (int r = 0; r < size; r++) {
       for (int c = 0; c < size; c++) {
         int n = board[r * size + c];
@@ -117,6 +130,8 @@ public:
 
   // print the board to console
   void print() {
+    if (turn == 1) cout << "Next Up: x\n";
+    else           cout << "Next Up: o\n";
     for (int r = 0; r < size; r++) {
       for (int c = 0; c < size; c++) {
         int n = board[r * size + c];
@@ -136,9 +151,14 @@ public:
     return size;
   }
 
-private:
+  ~Board() {
+    delete board;
+  }
+
+protected:
   char *board;
   int size;
+  char turn;
 
 };
 #endif
